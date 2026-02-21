@@ -289,6 +289,23 @@ func TestParseHTTPSensorParamsFromMap(t *testing.T) {
 	}
 }
 
+func TestParseHTTPSensorParamsFromMap_SSLMinExpiryIn(t *testing.T) {
+	paramsMap := map[string]interface{}{
+		"url":               "https://map-example.com",
+		"ssl_min_expiry_in": "14",
+		"ssl_strict":        "1",
+	}
+
+	params := parseHTTPSensorParamsFromMap(paramsMap)
+
+	if params.SSLValidity != 14 {
+		t.Errorf("Expected SSLValidity 14, got %d", params.SSLValidity)
+	}
+	if !params.VerifySSLCert {
+		t.Error("Expected VerifySSLCert to be true")
+	}
+}
+
 func TestConvertBasicSensorToHTTP_EnabledField(t *testing.T) {
 	testCases := []struct {
 		name          string

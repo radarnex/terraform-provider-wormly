@@ -33,7 +33,11 @@ This repository contains a Terraform provider for [Wormly](https://www.wormly.co
 The provider relies on Wormly API support, currently there're some known issues. 
 
 - **[Host]** It's not possible to customise any values from the API, so you need to tweak any settings (e.g., `Primary Monitoring Node`, etc) from the UI.
-- **[Sensors]** Only HTTP, FTP (pending) and Ping (pending) will be supported in the provider unless the API support the other types.
+- **[Sensor coverage]** Only HTTP, FTP (pending) and Ping (pending) will be supported in the provider unless the API supports other sensor types.
+- **[HTTP sensor updates]** The Wormly API command reference currently exposes `addHostSensor_HTTP`, `getHostSensors`, `enableSensor`, `disableSensor`, and `deleteSensor`, but no dedicated update/edit command for HTTP sensor settings. Because of this, changing HTTP sensor attributes other than `enabled` results in Terraform planning replacement (`delete` + `create`) instead of in-place update.
+- **[Host updates]** Wormly API does not currently expose an in-place update command for host name or test interval in this provider integration. Changing `name` or `test_interval` therefore plans replacement; only `enabled` is updated in place.
+- **[Scheduled downtime period updates]** Scheduled downtime periods are updatable in place, but changing `hostid` plans replacement.
+- **[Global alerts mute drift]** Wormly API does not currently provide a read endpoint for global alert mute state in this provider integration. If the value is changed outside Terraform, drift cannot be detected during refresh.
 
 ## Requirements
 

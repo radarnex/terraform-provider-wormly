@@ -4,11 +4,14 @@ page_title: "wormly_sensor_http Resource - wormly"
 subcategory: ""
 description: |-
   Wormly HTTP sensor resource
+  ~> Note: Wormly's public API does not currently provide a dedicated update command for HTTP sensor settings, so changes to attributes other than enabled require resource replacement.
 ---
 
 # wormly_sensor_http (Resource)
 
 Wormly HTTP sensor resource
+
+~> Note: Wormly's public API does not currently provide a dedicated update command for HTTP sensor settings, so changes to attributes other than `enabled` require resource replacement.
 
 ## Example Usage
 

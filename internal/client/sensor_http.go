@@ -404,7 +404,15 @@ func parseHTTPSensorParamsFromMap(paramsMap map[string]interface{}) *HTTPSensorP
 		params.UnwantedText = unwantedText
 	}
 
-	if sslValidity, ok := paramsMap["sslvalidity"].(string); ok {
+	if sslMinExpiry, ok := paramsMap["ssl_min_expiry_in"].(string); ok {
+		if s, err := strconv.Atoi(sslMinExpiry); err == nil {
+			params.SSLValidity = s
+		}
+	} else if sslMinExpiry, ok := paramsMap["ssl_min_expiry_in"].(float64); ok {
+		params.SSLValidity = int(sslMinExpiry)
+	} else if sslMinExpiry, ok := paramsMap["ssl_min_expiry_in"].(int); ok {
+		params.SSLValidity = sslMinExpiry
+	} else if sslValidity, ok := paramsMap["sslvalidity"].(string); ok {
 		if s, err := strconv.Atoi(sslValidity); err == nil {
 			params.SSLValidity = s
 		}

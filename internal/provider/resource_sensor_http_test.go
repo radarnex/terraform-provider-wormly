@@ -321,6 +321,30 @@ func TestAccSensorHTTPResource_basic(t *testing.T) {
 	})
 }
 
+func TestAccSensorHTTPResource_importWithOptionalReplaceFields(t *testing.T) {
+	rName := acctest.RandStringFromCharSet(10, acctest.CharSetAlphaNum)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccSensorHTTPResourceConfigWithOptionalReplaceFields(rName, "https://example.org", "Import Regression", 29),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("wormly_sensor_http.test", "url", "https://example.org"),
+					resource.TestCheckResourceAttr("wormly_sensor_http.test", "nice_name", "Import Regression"),
+					resource.TestCheckResourceAttr("wormly_sensor_http.test", "timeout", "29"),
+				),
+			},
+			{
+				ResourceName:      "wormly_sensor_http.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
 func testAccSensorHTTPResourceConfig(hostName, url string) string {
 	return fmt.Sprintf(`
 provider "wormly" {
@@ -339,4 +363,26 @@ resource "wormly_sensor_http" "test" {
   enabled = true
 }
 `, os.Getenv("WORMLY_API_KEY"), hostName, url)
+}
+
+func testAccSensorHTTPResourceConfigWithOptionalReplaceFields(hostName, url, niceName string, timeout int) string {
+	return fmt.Sprintf(`
+provider "wormly" {
+  api_key = "%s"
+}
+
+resource "wormly_host" "test" {
+  name          = "%s"
+  enabled       = true
+  test_interval = 60
+}
+
+resource "wormly_sensor_http" "test" {
+  host_id   = wormly_host.test.id
+  url       = "%s"
+  nice_name = "%s"
+  timeout   = %d
+  enabled   = true
+}
+`, os.Getenv("WORMLY_API_KEY"), hostName, url, niceName, timeout)
 }

@@ -62,7 +62,7 @@ func (r *sensorHTTPResource) Metadata(_ context.Context, req resource.MetadataRe
 
 func (r *sensorHTTPResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Wormly HTTP sensor resource",
+		MarkdownDescription: "Wormly HTTP sensor resource\n\n~> Note: Wormly's public API does not currently provide a dedicated update command for HTTP sensor settings, so changes to attributes other than `enabled` require resource replacement.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				MarkdownDescription: "Sensor identifier in format <host_id>/<sensor_id>",
@@ -88,7 +88,9 @@ func (r *sensorHTTPResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			"nice_name": schema.StringAttribute{
 				MarkdownDescription: "Nice name for the sensor",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -104,84 +106,108 @@ func (r *sensorHTTPResource) Schema(_ context.Context, _ resource.SchemaRequest,
 			"timeout": schema.Int64Attribute{
 				MarkdownDescription: "Timeout in seconds",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
 					int64planmodifier.RequiresReplace(),
 				},
 			},
 			"response_code": schema.StringAttribute{
 				MarkdownDescription: "Expected HTTP response code",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"verify_ssl_cert": schema.BoolAttribute{
 				MarkdownDescription: "Whether to verify SSL certificate",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"search_headers": schema.BoolAttribute{
 				MarkdownDescription: "Whether to search headers",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"expected_text": schema.StringAttribute{
 				MarkdownDescription: "Expected text in response",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"unwanted_text": schema.StringAttribute{
 				MarkdownDescription: "Unwanted text in response",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"ssl_validity": schema.Int64Attribute{
 				MarkdownDescription: "SSL validity period in days",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
 					int64planmodifier.RequiresReplace(),
 				},
 			},
 			"cookies": schema.StringAttribute{
 				MarkdownDescription: "Cookies to send with request",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"post_params": schema.StringAttribute{
 				MarkdownDescription: "POST parameters",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"custom_request_headers": schema.StringAttribute{
 				MarkdownDescription: "Custom request headers",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"user_agent": schema.StringAttribute{
 				MarkdownDescription: "User agent string",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"force_resolve": schema.StringAttribute{
 				MarkdownDescription: "Force resolve to specific IP",
 				Optional:            true,
+				Computed:            true,
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -216,49 +242,51 @@ func (r *sensorHTTPResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 
+	plannedData := data
+
 	// Build create request
 	createReq := &client.SensorHTTPCreateRequest{
 		HostID: int(data.HostID.ValueInt64()),
 		URL:    data.URL.ValueString(),
 	}
 
-	if !data.NiceName.IsNull() {
+	if !data.NiceName.IsNull() && !data.NiceName.IsUnknown() {
 		createReq.NiceName = data.NiceName.ValueString()
 	}
-	if !data.Timeout.IsNull() {
+	if !data.Timeout.IsNull() && !data.Timeout.IsUnknown() {
 		createReq.Timeout = int(data.Timeout.ValueInt64())
 	}
-	if !data.ResponseCode.IsNull() {
+	if !data.ResponseCode.IsNull() && !data.ResponseCode.IsUnknown() {
 		createReq.ResponseCode = data.ResponseCode.ValueString()
 	}
-	if !data.VerifySSLCert.IsNull() {
+	if !data.VerifySSLCert.IsNull() && !data.VerifySSLCert.IsUnknown() {
 		createReq.VerifySSLCert = data.VerifySSLCert.ValueBool()
 	}
-	if !data.SearchHeaders.IsNull() {
+	if !data.SearchHeaders.IsNull() && !data.SearchHeaders.IsUnknown() {
 		createReq.SearchHeaders = data.SearchHeaders.ValueBool()
 	}
-	if !data.ExpectedText.IsNull() {
+	if !data.ExpectedText.IsNull() && !data.ExpectedText.IsUnknown() {
 		createReq.ExpectedText = data.ExpectedText.ValueString()
 	}
-	if !data.UnwantedText.IsNull() {
+	if !data.UnwantedText.IsNull() && !data.UnwantedText.IsUnknown() {
 		createReq.UnwantedText = data.UnwantedText.ValueString()
 	}
-	if !data.SSLValidity.IsNull() {
+	if !data.SSLValidity.IsNull() && !data.SSLValidity.IsUnknown() {
 		createReq.SSLValidity = int(data.SSLValidity.ValueInt64())
 	}
-	if !data.Cookies.IsNull() {
+	if !data.Cookies.IsNull() && !data.Cookies.IsUnknown() {
 		createReq.Cookies = data.Cookies.ValueString()
 	}
-	if !data.PostParams.IsNull() {
+	if !data.PostParams.IsNull() && !data.PostParams.IsUnknown() {
 		createReq.PostParams = data.PostParams.ValueString()
 	}
-	if !data.CustomRequestHeaders.IsNull() {
+	if !data.CustomRequestHeaders.IsNull() && !data.CustomRequestHeaders.IsUnknown() {
 		createReq.CustomRequestHeaders = data.CustomRequestHeaders.ValueString()
 	}
-	if !data.UserAgent.IsNull() {
+	if !data.UserAgent.IsNull() && !data.UserAgent.IsUnknown() {
 		createReq.UserAgent = data.UserAgent.ValueString()
 	}
-	if !data.ForceResolve.IsNull() {
+	if !data.ForceResolve.IsNull() && !data.ForceResolve.IsUnknown() {
 		createReq.ForceResolve = data.ForceResolve.ValueString()
 	}
 
@@ -286,11 +314,17 @@ func (r *sensorHTTPResource) Create(ctx context.Context, req resource.CreateRequ
 		}
 	}
 
+	// Read the created sensor so all computed attributes are known in state.
+	sensor, err = r.client.GetSensorHTTP(ctx, sensor.HostID, sensor.ID)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read HTTP sensor after creation, got error: %s", err))
+		return
+	}
+
 	// Set the computed ID in format <host_id>/<sensor_id>
 	data.ID = types.StringValue(fmt.Sprintf("%d/%d", sensor.HostID, sensor.ID))
-
-	// All other values should remain as they were in the plan since the creation was successful
-	// and all attributes have RequiresReplace, so they can't be changed after creation
+	setSensorHTTPResourceModelFromAPI(&data, sensor)
+	applyKnownSensorHTTPPlanValues(&data, &plannedData)
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -325,54 +359,9 @@ func (r *sensorHTTPResource) Read(ctx context.Context, req resource.ReadRequest,
 	}
 
 	// Update the model with the current state from API
-	// But preserve null values for optional fields that weren't originally specified
-	data.HostID = types.Int64Value(int64(sensor.HostID))
-	data.URL = types.StringValue(sensor.URL)
-
-	// For optional fields, only update if we previously had a value
-	// This preserves the user's original intent (null vs specified)
-	if !data.NiceName.IsNull() {
-		data.NiceName = types.StringValue(sensor.NiceName)
-	}
-	if !data.Timeout.IsNull() {
-		data.Timeout = types.Int64Value(int64(sensor.Timeout))
-	}
-	if !data.ResponseCode.IsNull() {
-		data.ResponseCode = types.StringValue(sensor.ResponseCode)
-	}
-	if !data.VerifySSLCert.IsNull() {
-		data.VerifySSLCert = types.BoolValue(sensor.VerifySSLCert)
-	}
-	if !data.SearchHeaders.IsNull() {
-		data.SearchHeaders = types.BoolValue(sensor.SearchHeaders)
-	}
-	if !data.ExpectedText.IsNull() {
-		data.ExpectedText = types.StringValue(sensor.ExpectedText)
-	}
-	if !data.UnwantedText.IsNull() {
-		data.UnwantedText = types.StringValue(sensor.UnwantedText)
-	}
-	if !data.SSLValidity.IsNull() {
-		data.SSLValidity = types.Int64Value(int64(sensor.SSLValidity))
-	}
-	if !data.Cookies.IsNull() {
-		data.Cookies = types.StringValue(sensor.Cookies)
-	}
-	if !data.PostParams.IsNull() {
-		data.PostParams = types.StringValue(sensor.PostParams)
-	}
-	if !data.CustomRequestHeaders.IsNull() {
-		data.CustomRequestHeaders = types.StringValue(sensor.CustomRequestHeaders)
-	}
-	if !data.UserAgent.IsNull() {
-		data.UserAgent = types.StringValue(sensor.UserAgent)
-	}
-	if !data.ForceResolve.IsNull() {
-		data.ForceResolve = types.StringValue(sensor.ForceResolve)
-	}
-
-	// Always update the enabled state from the API response
-	data.Enabled = types.BoolValue(sensor.Enabled)
+	previousSSLValidity := data.SSLValidity
+	setSensorHTTPResourceModelFromAPI(&data, sensor)
+	preserveReadValuesWhenAPIDoesNotReturnThem(&data, sensor, previousSSLValidity)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -491,4 +480,71 @@ func parseSensorID(id string) (hostID int, sensorID int, err error) {
 	}
 
 	return hostID, sensorID, nil
+}
+
+func setSensorHTTPResourceModelFromAPI(data *sensorHTTPResourceModel, sensor *client.SensorHTTP) {
+	data.HostID = types.Int64Value(int64(sensor.HostID))
+	data.URL = types.StringValue(sensor.URL)
+	data.NiceName = types.StringValue(sensor.NiceName)
+	data.Enabled = types.BoolValue(sensor.Enabled)
+	data.Timeout = types.Int64Value(int64(sensor.Timeout))
+	data.ResponseCode = types.StringValue(sensor.ResponseCode)
+	data.VerifySSLCert = types.BoolValue(sensor.VerifySSLCert)
+	data.SearchHeaders = types.BoolValue(sensor.SearchHeaders)
+	data.ExpectedText = types.StringValue(sensor.ExpectedText)
+	data.UnwantedText = types.StringValue(sensor.UnwantedText)
+	data.SSLValidity = types.Int64Value(int64(sensor.SSLValidity))
+	data.Cookies = types.StringValue(sensor.Cookies)
+	data.PostParams = types.StringValue(sensor.PostParams)
+	data.CustomRequestHeaders = types.StringValue(sensor.CustomRequestHeaders)
+	data.UserAgent = types.StringValue(sensor.UserAgent)
+	data.ForceResolve = types.StringValue(sensor.ForceResolve)
+}
+
+func preserveReadValuesWhenAPIDoesNotReturnThem(data *sensorHTTPResourceModel, sensor *client.SensorHTTP, previousSSLValidity types.Int64) {
+	if sensor.SSLValidity == 0 && !previousSSLValidity.IsNull() && !previousSSLValidity.IsUnknown() && previousSSLValidity.ValueInt64() > 0 {
+		data.SSLValidity = previousSSLValidity
+	}
+}
+
+func applyKnownSensorHTTPPlanValues(data *sensorHTTPResourceModel, plan *sensorHTTPResourceModel) {
+	if !plan.NiceName.IsUnknown() {
+		data.NiceName = plan.NiceName
+	}
+	if !plan.Timeout.IsUnknown() {
+		data.Timeout = plan.Timeout
+	}
+	if !plan.ResponseCode.IsUnknown() {
+		data.ResponseCode = plan.ResponseCode
+	}
+	if !plan.VerifySSLCert.IsUnknown() {
+		data.VerifySSLCert = plan.VerifySSLCert
+	}
+	if !plan.SearchHeaders.IsUnknown() {
+		data.SearchHeaders = plan.SearchHeaders
+	}
+	if !plan.ExpectedText.IsUnknown() {
+		data.ExpectedText = plan.ExpectedText
+	}
+	if !plan.UnwantedText.IsUnknown() {
+		data.UnwantedText = plan.UnwantedText
+	}
+	if !plan.SSLValidity.IsUnknown() {
+		data.SSLValidity = plan.SSLValidity
+	}
+	if !plan.Cookies.IsUnknown() {
+		data.Cookies = plan.Cookies
+	}
+	if !plan.PostParams.IsUnknown() {
+		data.PostParams = plan.PostParams
+	}
+	if !plan.CustomRequestHeaders.IsUnknown() {
+		data.CustomRequestHeaders = plan.CustomRequestHeaders
+	}
+	if !plan.UserAgent.IsUnknown() {
+		data.UserAgent = plan.UserAgent
+	}
+	if !plan.ForceResolve.IsUnknown() {
+		data.ForceResolve = plan.ForceResolve
+	}
 }
